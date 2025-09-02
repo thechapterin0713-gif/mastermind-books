@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메모 앱</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-sticky-note"></i> 내 메모장</h1>
+            <button class="new-memo-btn" id="newMemoBtn">
+                <i class="fas fa-plus"></i> 새 메모
+            </button>
+        </header>
+
+        <div class="main-content">
+            <!-- 나의 원칙 섹션 -->
+            <section class="principles" id="principlesSection">
+                <h2><i class="fas fa-compass"></i> 나의 원칙</h2>
+                <div class="principles-grid">
+                    <div class="principle-card">
+                        <div class="principle-header">
+                            <h3>돈에 대한 원칙</h3>
+                            <span class="autosave-status" id="moneyStatus">자동저장됨</span>
+                        </div>
+                        <textarea id="principleMoney" placeholder="예) 수입의 20%는 자동 저축한다.\n예) 투자 결정 전 최소 24시간 숙려한다."></textarea>
+                    </div>
+                    <div class="principle-card">
+                        <div class="principle-header">
+                            <h3>사업에 대한 원칙</h3>
+                            <span class="autosave-status" id="businessStatus">자동저장됨</span>
+                        </div>
+                        <textarea id="principleBusiness" placeholder="예) 고객의 문제를 먼저 정의한다.\n예) 매주 핵심 지표를 점검한다."></textarea>
+                    </div>
+                    <div class="principle-card">
+                        <div class="principle-header">
+                            <h3>개인 생활에 대한 원칙</h3>
+                            <span class="autosave-status" id="lifeStatus">자동저장됨</span>
+                        </div>
+                        <textarea id="principleLife" placeholder="예) 매일 30분 운동한다.\n예) 수면 7시간을 우선한다."></textarea>
+                    </div>
+                </div>
+            </section>
+            <!-- 메모 작성/편집 영역 -->
+            <div class="memo-editor" id="memoEditor">
+                <div class="editor-header">
+                    <input type="text" id="memoTitle" placeholder="메모 제목을 입력하세요..." class="memo-title-input">
+                    <div class="editor-actions">
+                        <button class="save-btn" id="saveBtn">
+                            <i class="fas fa-save"></i> 저장
+                        </button>
+                        <button class="cancel-btn" id="cancelBtn">
+                            <i class="fas fa-times"></i> 취소
+                        </button>
+                    </div>
+                </div>
+                <textarea id="memoContent" placeholder="메모 내용을 입력하세요..." class="memo-content-input"></textarea>
+            </div>
+
+            <!-- 메모 목록 -->
+            <div class="memo-list-container">
+                <div class="memo-list-header">
+                    <h2>저장된 메모</h2>
+                    <div class="search-container">
+                        <input type="text" id="searchInput" placeholder="메모 검색..." class="search-input">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                </div>
+                <div class="memo-list" id="memoList">
+                    <!-- 메모 항목들이 여기에 동적으로 추가됩니다 -->
+                </div>
+                <div class="empty-state" id="emptyState">
+                    <i class="fas fa-sticky-note"></i>
+                    <p>아직 메모가 없습니다.</p>
+                    <p>새 메모를 작성해보세요!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 삭제 확인 모달 -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <h3>메모 삭제</h3>
+            <p>이 메모를 정말 삭제하시겠습니까?</p>
+            <div class="modal-actions">
+                <button class="delete-confirm-btn" id="deleteConfirmBtn">삭제</button>
+                <button class="modal-cancel-btn" id="modalCancelBtn">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
