@@ -217,11 +217,28 @@ weekButtons.forEach(button => {
         // 선택된 주차 설정
         currentWeek = button.dataset.week;
         
+        // 주차 선택 시 필터 초기화
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        const allFilterBtn = document.querySelector('[data-filter="all"]');
+        if (allFilterBtn) allFilterBtn.classList.add('active');
+        currentFilter = 'all';
+        
         // 책 목록 렌더링
         renderBooks();
         
         // 통계 업데이트
         updateStats();
+        
+        // 주차별 메시지 표시
+        let weekMessage = '';
+        if (currentWeek === 'all') {
+            weekMessage = '모든 주차의 책을 표시합니다';
+        } else {
+            const weekBookCount = booksData[currentWeek] ? booksData[currentWeek].length : 0;
+            weekMessage = `${currentWeek}주차 책 ${weekBookCount}권을 표시합니다`;
+        }
+        
+        showSuccessMessage(weekMessage);
     });
 });
 
@@ -235,8 +252,43 @@ filterButtons.forEach(button => {
         // 선택된 필터 설정
         currentFilter = button.dataset.filter;
         
+        // 필터가 'all'이 아닌 경우 전체 주차로 설정
+        if (currentFilter !== 'all') {
+            weekButtons.forEach(btn => btn.classList.remove('active'));
+            const allWeekBtn = document.querySelector('[data-week="all"]');
+            if (allWeekBtn) allWeekBtn.classList.add('active');
+            currentWeek = 'all';
+        }
+        
+        // 통계 업데이트
+        updateStats();
+        
         // 책 목록 렌더링
         renderBooks();
+        
+        // 필터별 메시지 표시
+        let filterMessage = '';
+        switch (currentFilter) {
+            case 'reading':
+                filterMessage = `읽는 중인 책 ${readingBooks.length}권을 표시합니다`;
+                break;
+            case 'completed':
+                filterMessage = `완료된 책 ${completedBooks.length}권을 표시합니다`;
+                break;
+            case 'not-started':
+                const notStartedCount = Object.values(booksData).flat().filter(book => 
+                    !completedBooks.includes(book.title) && !readingBooks.includes(book.title)
+                ).length;
+                filterMessage = `시작하지 않은 책 ${notStartedCount}권을 표시합니다`;
+                break;
+            case 'all':
+                filterMessage = '모든 책을 표시합니다';
+                break;
+        }
+        
+        if (filterMessage) {
+            showSuccessMessage(filterMessage);
+        }
     });
 });
 
@@ -572,7 +624,21 @@ function addStatsCardClickEvents() {
             
             // 필터 적용
             currentFilter = 'completed';
+            
+            // 전체 주차로 설정 (완료된 책은 모든 주차에 있을 수 있음)
+            weekButtons.forEach(btn => btn.classList.remove('active'));
+            const allWeekBtn = document.querySelector('[data-week="all"]');
+            if (allWeekBtn) allWeekBtn.classList.add('active');
+            currentWeek = 'all';
+            
+            // 통계 업데이트
+            updateStats();
+            
+            // 책 목록 렌더링
             renderBooks();
+            
+            // 성공 메시지 표시
+            showSuccessMessage(`${completedBooks.length}권의 완료된 책을 표시합니다`);
         }
     });
     
@@ -586,7 +652,21 @@ function addStatsCardClickEvents() {
             
             // 필터 적용
             currentFilter = 'reading';
+            
+            // 전체 주차로 설정 (읽는 중인 책은 모든 주차에 있을 수 있음)
+            weekButtons.forEach(btn => btn.classList.remove('active'));
+            const allWeekBtn = document.querySelector('[data-week="all"]');
+            if (allWeekBtn) allWeekBtn.classList.add('active');
+            currentWeek = 'all';
+            
+            // 통계 업데이트
+            updateStats();
+            
+            // 책 목록 렌더링
             renderBooks();
+            
+            // 성공 메시지 표시
+            showSuccessMessage(`${readingBooks.length}권의 읽는 중인 책을 표시합니다`);
         }
     });
     
@@ -599,7 +679,21 @@ function addStatsCardClickEvents() {
         
         // 필터 적용
         currentFilter = 'all';
+        
+        // 전체 주차로 설정
+        weekButtons.forEach(btn => btn.classList.remove('active'));
+        const allWeekBtn = document.querySelector('[data-week="all"]');
+        if (allWeekBtn) allWeekBtn.classList.add('active');
+        currentWeek = 'all';
+        
+        // 통계 업데이트
+        updateStats();
+        
+        // 책 목록 렌더링
         renderBooks();
+        
+        // 성공 메시지 표시
+        showSuccessMessage('모든 책을 표시합니다');
     });
 }
 
