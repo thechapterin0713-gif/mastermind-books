@@ -415,20 +415,102 @@ function stopReading(bookTitle) {
     }
 }
 
+// 현재 편집 중인 책 제목
+let currentEditingBook = '';
+
 // 책 노트 열기
 function openBookNotes(bookTitle) {
+    currentEditingBook = bookTitle;
     const currentNote = bookNotes[bookTitle] || '';
-    const noteText = prompt(`"${bookTitle}" 노트 작성 (최대 2000자):`, currentNote);
     
-    if (noteText !== null) {
-        if (noteText.length <= 2000) {
-            bookNotes[bookTitle] = noteText;
-            localStorage.setItem('bookNotes', JSON.stringify(bookNotes));
-            alert('노트가 저장되었습니다!');
-        } else {
-            alert('노트는 2000자를 초과할 수 없습니다.');
-        }
+    // 모달 제목 설정
+    document.getElementById('noteModalTitle').textContent = `"${bookTitle}" 노트 작성`;
+    
+    // 텍스트 영역에 현재 노트 내용 설정
+    const textarea = document.getElementById('noteTextarea');
+    textarea.value = currentNote;
+    
+    // 글자 수 업데이트
+    updateCharCount();
+    
+    // 모달 표시
+    document.getElementById('noteModal').style.display = 'block';
+    
+    // 텍스트 영역에 포커스
+    textarea.focus();
+}
+
+// 노트 모달 닫기
+function closeNoteModal() {
+    document.getElementById('noteModal').style.display = 'none';
+    currentEditingBook = '';
+}
+
+// 노트 저장
+function saveNote() {
+    if (!currentEditingBook) return;
+    
+    const noteText = document.getElementById('noteTextarea').value;
+    
+    if (noteText.length <= 2000) {
+        bookNotes[currentEditingBook] = noteText;
+        localStorage.setItem('bookNotes', JSON.stringify(bookNotes));
+        
+        // 성공 메시지 표시
+        showSuccessMessage('노트가 저장되었습니다!');
+        
+        // 모달 닫기
+        closeNoteModal();
+        
+        // UI 업데이트
+        renderBooks();
+    } else {
+        alert('노트는 2000자를 초과할 수 없습니다.');
     }
+}
+
+// 글자 수 업데이트
+function updateCharCount() {
+    const textarea = document.getElementById('noteTextarea');
+    const charCount = textarea.value.length;
+    document.getElementById('currentCharCount').textContent = charCount;
+    
+    // 글자 수에 따른 색상 변경
+    const charCountElement = document.getElementById('currentCharCount');
+    if (charCount > 1800) {
+        charCountElement.style.color = '#f44336'; // 빨간색
+    } else if (charCount > 1500) {
+        charCountElement.style.color = '#ff9800'; // 주황색
+    } else {
+        charCountElement.style.color = '#667eea'; // 기본색
+    }
+}
+
+// 성공 메시지 표시
+function showSuccessMessage(message) {
+    // 간단한 토스트 메시지 생성
+    const toast = document.createElement('div');
+    toast.className = 'success-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #4CAF50;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1001;
+        animation: slideInRight 0.3s ease-out;
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // 3초 후 자동 제거
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
 
 // 책 완료/미완료 토글
@@ -549,7 +631,32 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 통계 카드 클릭 이벤트 추가
     addStatsCardClickEvents();
+    
+    // 노트 모달 이벤트 리스너 추가
+    addNoteModalEventListeners();
 });
+
+// 노트 모달 이벤트 리스너 추가
+function addNoteModalEventListeners() {
+    // 텍스트 영역 입력 이벤트
+    const textarea = document.getElementById('noteTextarea');
+    textarea.addEventListener('input', updateCharCount);
+    
+    // 모달 외부 클릭 시 닫기
+    const modal = document.getElementById('noteModal');
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeNoteModal();
+        }
+    });
+    
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display === 'block') {
+            closeNoteModal();
+        }
+    });
+}
 
 // 키보드 단축키 지원
 document.addEventListener('keydown', (e) => {

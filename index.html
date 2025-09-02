@@ -97,5 +97,37 @@
     </div>
 
     <script src="book-script.js"></script>
+    
+    <!-- 노트 모달 -->
+    <div id="noteModal" class="note-modal">
+        <div class="note-modal-content">
+            <div class="note-modal-header">
+                <h3 id="noteModalTitle">책 노트 작성</h3>
+                <button class="note-close-btn" onclick="closeNoteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="note-modal-body">
+                <div class="note-textarea-container">
+                    <textarea 
+                        id="noteTextarea" 
+                        placeholder="여기에 노트를 작성하세요 (최대 2000자)"
+                        maxlength="2000"
+                    ></textarea>
+                    <div class="note-char-count">
+                        <span id="currentCharCount">0</span> / 2000자
+                    </div>
+                </div>
+            </div>
+            <div class="note-modal-footer">
+                <button class="note-save-btn" onclick="saveNote()">
+                    <i class="fas fa-save"></i> 저장
+                </button>
+                <button class="note-cancel-btn" onclick="closeNoteModal()">
+                    <i class="fas fa-times"></i> 취소
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
