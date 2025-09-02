@@ -1,11 +1,12 @@
 // Service Worker for PWA
 const CACHE_NAME = 'mastermind-books-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/book-styles.css',
-  '/book-script.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './book-styles.css',
+  './book-script.js',
+  './manifest.json',
+  './icon.svg'
 ];
 
 // Install event
