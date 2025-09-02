@@ -305,13 +305,12 @@ function renderBooks() {
     let booksToShow = [];
     
     if (currentWeek === 'all') {
-        // 모든 주차의 책을 하나의 배열로 합치기
-        Object.values(booksData).forEach(weekBooks => {
-            booksToShow.push(...weekBooks);
-        });
+        // 모든 주차의 책을 하나의 배열로 합치기 (기본 + 사용자 추가)
+        booksToShow = getAllBooks();
     } else {
         // 특정 주차의 책만 표시
-        booksToShow = booksData[currentWeek] || [];
+        const weekNum = parseInt(currentWeek);
+        booksToShow = getAllBooks().filter(book => book.week === weekNum);
     }
     
     // 필터링 적용
@@ -399,9 +398,14 @@ function createBookCard(book) {
     card.innerHTML = `
         <div class="book-header">
             <h3 class="book-title">${book.title}</h3>
-            <span class="week-badge">${book.week}주차</span>
+            <div class="book-header-right">
+                <span class="week-badge">${book.week}주차</span>
+                ${book.isCustom ? '<span class="custom-badge"><i class="fas fa-user-plus"></i> 내가 추가</span>' : ''}
+            </div>
         </div>
         <p class="book-description">${book.description}</p>
+        ${book.author ? `<p class="book-author"><i class="fas fa-user"></i> ${book.author}</p>` : ''}
+        ${book.category ? `<p class="book-category"><i class="fas fa-tag"></i> ${book.category}</p>` : ''}
         
         <!-- 책 상태 표시 -->
         <div class="book-status">
@@ -438,6 +442,11 @@ function createBookCard(book) {
             <button class="action-btn notes-btn" onclick="openBookNotes('${book.title}')">
                 <i class="fas fa-edit"></i> ${hasNotes ? '노트 보기' : '노트 작성'}
             </button>
+            ${book.isCustom ? 
+                `<button class="action-btn delete-btn" onclick="deleteCustomBook(${book.id})">
+                    <i class="fas fa-trash"></i> 삭제
+                </button>` : ''
+            }
         </div>
     `;
     
@@ -793,5 +802,133 @@ document.addEventListener('keydown', (e) => {
         currentSearchTerm = '';
         renderBooks();
         searchInput.blur();
+    }
+});
+
+// 책 추가 관련 기능
+let customBooks = JSON.parse(localStorage.getItem('customBooks') || '[]');
+
+// 책 추가 모달 열기
+function openAddBookModal() {
+    const modal = document.getElementById('addBookModal');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // 폼 초기화
+    document.getElementById('addBookForm').reset();
+    
+    // 첫 번째 입력 필드에 포커스
+    setTimeout(() => {
+        document.getElementById('bookTitle').focus();
+    }, 100);
+}
+
+// 책 추가 모달 닫기
+function closeAddBookModal() {
+    const modal = document.getElementById('addBookModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// 새 책 저장
+function saveNewBook() {
+    const form = document.getElementById('addBookForm');
+    const formData = new FormData(form);
+    
+    // 필수 필드 검증
+    const title = formData.get('title').trim();
+    const week = formData.get('week');
+    
+    if (!title) {
+        showToast('책 제목을 입력해주세요.', 'error');
+        document.getElementById('bookTitle').focus();
+        return;
+    }
+    
+    if (!week) {
+        showToast('주차를 선택해주세요.', 'error');
+        document.getElementById('bookWeek').focus();
+        return;
+    }
+    
+    // 새 책 객체 생성
+    const newBook = {
+        id: Date.now(), // 고유 ID 생성
+        title: title,
+        author: formData.get('author').trim() || '',
+        category: formData.get('category') || '기타',
+        description: formData.get('description').trim() || '',
+        week: parseInt(week),
+        isCustom: true, // 사용자가 추가한 책임을 표시
+        status: 'not-started',
+        note: ''
+    };
+    
+    // 로컬 스토리지에 저장
+    customBooks.push(newBook);
+    localStorage.setItem('customBooks', JSON.stringify(customBooks));
+    
+    // 성공 메시지 표시
+    showToast(`"${newBook.title}" 책이 ${newBook.week}주차에 추가되었습니다!`, 'success');
+    
+    // 모달 닫기
+    closeAddBookModal();
+    
+    // 책 목록 다시 렌더링
+    renderBooks();
+    updateStats();
+}
+
+// 모든 책 데이터 가져오기 (기본 + 사용자 추가)
+function getAllBooks() {
+    const allBooks = [];
+    
+    // 기본 책들 추가
+    Object.keys(booksData).forEach(week => {
+        booksData[week].forEach(book => {
+            allBooks.push({
+                ...book,
+                id: book.id || `default-${week}-${book.title}`,
+                isCustom: false
+            });
+        });
+    });
+    
+    // 사용자가 추가한 책들 추가
+    customBooks.forEach(book => {
+        allBooks.push(book);
+    });
+    
+    return allBooks;
+}
+
+// 책 삭제 기능
+function deleteCustomBook(bookId) {
+    if (confirm('이 책을 삭제하시겠습니까?')) {
+        customBooks = customBooks.filter(book => book.id !== bookId);
+        localStorage.setItem('customBooks', JSON.stringify(customBooks));
+        
+        showToast('책이 삭제되었습니다.', 'success');
+        renderBooks();
+        updateStats();
+    }
+}
+
+// 모달 외부 클릭 시 닫기
+window.addEventListener('click', (e) => {
+    const addBookModal = document.getElementById('addBookModal');
+    if (e.target === addBookModal) {
+        closeAddBookModal();
+    }
+});
+
+// Enter 키로 책 추가
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && document.getElementById('addBookModal').style.display === 'block') {
+        const activeElement = document.activeElement;
+        if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT' || activeElement.tagName === 'TEXTAREA') {
+            e.preventDefault();
+            saveNewBook();
+        }
     }
 });
