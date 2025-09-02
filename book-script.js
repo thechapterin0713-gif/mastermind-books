@@ -182,8 +182,13 @@ let currentWeek = 'all';
 // 검색어
 let currentSearchTerm = '';
 
-// 완료된 책 목록 (로컬 스토리지에서 불러오기)
+// 현재 필터 상태
+let currentFilter = 'all';
+
+// 책 상태 관리 (로컬 스토리지에서 불러오기)
 let completedBooks = JSON.parse(localStorage.getItem('completedBooks')) || [];
+let readingBooks = JSON.parse(localStorage.getItem('readingBooks')) || [];
+let bookNotes = JSON.parse(localStorage.getItem('bookNotes')) || {};
 
 // DOM 요소들
 const weekButtons = document.querySelectorAll('.week-btn');
@@ -198,6 +203,9 @@ const totalBooksCount = document.getElementById('totalBooksCount');
 const completedBooksCount = document.getElementById('completedBooksCount');
 const currentWeekBooks = document.getElementById('currentWeekBooks');
 const completionRate = document.getElementById('completionRate');
+
+// 필터 버튼들
+const filterButtons = document.querySelectorAll('.filter-btn');
 
 // 주차별 버튼 클릭 이벤트
 weekButtons.forEach(button => {
@@ -214,6 +222,21 @@ weekButtons.forEach(button => {
         
         // 통계 업데이트
         updateStats();
+    });
+});
+
+// 필터 버튼 클릭 이벤트
+filterButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        // 활성 필터 버튼 변경
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // 선택된 필터 설정
+        currentFilter = button.dataset.filter;
+        
+        // 책 목록 렌더링
+        renderBooks();
     });
 });
 
@@ -239,6 +262,25 @@ function renderBooks() {
         booksToShow = booksData[currentWeek] || [];
     }
     
+    // 필터링 적용
+    if (currentFilter !== 'all') {
+        booksToShow = booksToShow.filter(book => {
+            const isCompleted = completedBooks.includes(book.title);
+            const isReading = readingBooks.includes(book.title);
+            
+            switch (currentFilter) {
+                case 'reading':
+                    return isReading;
+                case 'completed':
+                    return isCompleted;
+                case 'not-started':
+                    return !isCompleted && !isReading;
+                default:
+                    return true;
+            }
+        });
+    }
+    
     // 검색어가 있으면 필터링
     if (currentSearchTerm) {
         booksToShow = booksToShow.filter(book => 
@@ -248,10 +290,29 @@ function renderBooks() {
     }
     
     if (booksToShow.length === 0) {
+        let emptyMessage = '';
+        if (currentSearchTerm) {
+            emptyMessage = `"${currentSearchTerm}" 검색 결과가 없습니다.`;
+        } else if (currentFilter !== 'all') {
+            switch (currentFilter) {
+                case 'reading':
+                    emptyMessage = '현재 읽고 있는 책이 없습니다.';
+                    break;
+                case 'completed':
+                    emptyMessage = '완료된 책이 없습니다.';
+                    break;
+                case 'not-started':
+                    emptyMessage = '시작하지 않은 책이 없습니다.';
+                    break;
+            }
+        } else {
+            emptyMessage = '해당 주차에 책이 없습니다.';
+        }
+        
         booksContainer.innerHTML = `
             <div class="empty-state">
                 <i class="fas fa-search"></i>
-                <p>${currentSearchTerm ? `"${currentSearchTerm}" 검색 결과가 없습니다.` : '해당 주차에 책이 없습니다.'}</p>
+                <p>${emptyMessage}</p>
                 <p>다른 검색어나 주차를 시도해보세요.</p>
             </div>
         `;
@@ -273,6 +334,15 @@ function createBookCard(book) {
     card.className = 'book-card';
     
     const isCompleted = completedBooks.includes(book.title);
+    const isReading = readingBooks.includes(book.title);
+    const hasNotes = bookNotes[book.title] && bookNotes[book.title].length > 0;
+    
+    // 상태에 따른 배경색 클래스 추가
+    let statusClass = '';
+    if (isCompleted) statusClass = 'completed-book';
+    else if (isReading) statusClass = 'reading-book';
+    
+    card.className = `book-card ${statusClass}`;
     
     card.innerHTML = `
         <div class="book-header">
@@ -280,18 +350,42 @@ function createBookCard(book) {
             <span class="week-badge">${book.week}주차</span>
         </div>
         <p class="book-description">${book.description}</p>
+        
+        <!-- 책 상태 표시 -->
+        <div class="book-status">
+            ${isCompleted ? 
+                '<span class="status-badge completed"><i class="fas fa-check-circle"></i> 완료</span>' :
+                isReading ? 
+                '<span class="status-badge reading"><i class="fas fa-book-open"></i> 읽는 중</span>' :
+                '<span class="status-badge not-started"><i class="fas fa-clock"></i> 시작 전</span>'
+            }
+            ${hasNotes ? '<span class="status-badge notes"><i class="fas fa-sticky-note"></i> 노트 있음</span>' : ''}
+        </div>
+        
         <div class="book-actions">
+            ${!isCompleted && !isReading ? 
+                `<button class="action-btn read-btn" onclick="markAsReading('${book.title}')">
+                    <i class="fas fa-book-open"></i> 읽기 시작
+                </button>` : ''
+            }
+            ${isReading ? 
+                `<button class="action-btn reading-btn" onclick="stopReading('${book.title}')">
+                    <i class="fas fa-pause"></i> 읽기 중단
+                </button>` : ''
+            }
+            ${!isCompleted ? 
+                `<button class="action-btn complete-btn" onclick="toggleBookCompletion('${book.title}')">
+                    <i class="fas fa-check"></i> 완료
+                </button>` : ''
+            }
             ${isCompleted ? 
                 `<button class="action-btn completed" onclick="toggleBookCompletion('${book.title}')">
                     <i class="fas fa-check"></i> 완료됨
-                </button>` :
-                `<button class="action-btn read-btn" onclick="markAsReading('${book.title}')">
-                    <i class="fas fa-book-open"></i> 읽는 중
-                </button>
-                <button class="action-btn complete-btn" onclick="toggleBookCompletion('${book.title}')">
-                    <i class="fas fa-check"></i> 완료
-                </button>`
+                </button>` : ''
             }
+            <button class="action-btn notes-btn" onclick="openBookNotes('${book.title}')">
+                <i class="fas fa-edit"></i> ${hasNotes ? '노트 보기' : '노트 작성'}
+            </button>
         </div>
     `;
     
@@ -300,7 +394,41 @@ function createBookCard(book) {
 
 // 책 읽기 시작
 function markAsReading(bookTitle) {
-    alert(`"${bookTitle}" 읽기를 시작합니다!`);
+    if (!readingBooks.includes(bookTitle)) {
+        readingBooks.push(bookTitle);
+        localStorage.setItem('readingBooks', JSON.stringify(readingBooks));
+        alert(`"${bookTitle}" 읽기를 시작합니다!`);
+        renderBooks();
+        updateStats();
+    }
+}
+
+// 책 읽기 중단
+function stopReading(bookTitle) {
+    const index = readingBooks.indexOf(bookTitle);
+    if (index > -1) {
+        readingBooks.splice(index, 1);
+        localStorage.setItem('readingBooks', JSON.stringify(readingBooks));
+        alert(`"${bookTitle}" 읽기를 중단했습니다.`);
+        renderBooks();
+        updateStats();
+    }
+}
+
+// 책 노트 열기
+function openBookNotes(bookTitle) {
+    const currentNote = bookNotes[bookTitle] || '';
+    const noteText = prompt(`"${bookTitle}" 노트 작성 (최대 2000자):`, currentNote);
+    
+    if (noteText !== null) {
+        if (noteText.length <= 2000) {
+            bookNotes[bookTitle] = noteText;
+            localStorage.setItem('bookNotes', JSON.stringify(bookNotes));
+            alert('노트가 저장되었습니다!');
+        } else {
+            alert('노트는 2000자를 초과할 수 없습니다.');
+        }
+    }
 }
 
 // 책 완료/미완료 토글
@@ -340,13 +468,57 @@ function updateProgress() {
 function updateStats() {
     const totalBooks = Object.values(booksData).flat().length;
     const completedCount = completedBooks.length;
+    const readingCount = readingBooks.length;
     const currentWeekCount = currentWeek === 'all' ? totalBooks : (booksData[currentWeek] || []).length;
     const completionRateValue = totalBooks > 0 ? Math.round((completedCount / totalBooks) * 100) : 0;
     
     totalBooksCount.textContent = totalBooks;
     completedBooksCount.textContent = completedCount;
-    currentWeekBooks.textContent = currentWeekCount;
+    currentWeekBooks.textContent = readingCount;
     completionRate.textContent = `${completionRateValue}%`;
+}
+
+// 통계 카드 클릭 이벤트 추가
+function addStatsCardClickEvents() {
+    // 완료된 책 카드 클릭 시 완료된 책만 보기
+    completedBooksCount.parentElement.addEventListener('click', () => {
+        if (completedBooks.length > 0) {
+            // 필터 버튼 활성화
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            const completedFilterBtn = document.querySelector('[data-filter="completed"]');
+            if (completedFilterBtn) completedFilterBtn.classList.add('active');
+            
+            // 필터 적용
+            currentFilter = 'completed';
+            renderBooks();
+        }
+    });
+    
+    // 읽는 중인 책 카드 클릭 시 읽는 중인 책만 보기
+    currentWeekBooks.parentElement.addEventListener('click', () => {
+        if (readingBooks.length > 0) {
+            // 필터 버튼 활성화
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            const readingFilterBtn = document.querySelector('[data-filter="reading"]');
+            if (readingFilterBtn) readingFilterBtn.classList.add('active');
+            
+            // 필터 적용
+            currentFilter = 'reading';
+            renderBooks();
+        }
+    });
+    
+    // 전체 책 카드 클릭 시 전체 보기
+    totalBooksCount.parentElement.addEventListener('click', () => {
+        // 필터 버튼 활성화
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        const allFilterBtn = document.querySelector('[data-filter="all"]');
+        if (allFilterBtn) allFilterBtn.classList.add('active');
+        
+        // 필터 적용
+        currentFilter = 'all';
+        renderBooks();
+    });
 }
 
 // PWA Service Worker 등록
@@ -374,6 +546,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 통계 초기화
     updateStats();
+    
+    // 통계 카드 클릭 이벤트 추가
+    addStatsCardClickEvents();
 });
 
 // 키보드 단축키 지원

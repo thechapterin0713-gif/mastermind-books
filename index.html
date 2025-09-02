@@ -34,12 +34,28 @@
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="currentWeekBooks">0</div>
-                <div class="stat-label">현재 주차 책</div>
+                <div class="stat-label">읽는 중인 책</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="completionRate">0%</div>
                 <div class="stat-label">완료율</div>
             </div>
+        </div>
+        
+        <!-- 필터 버튼 추가 -->
+        <div class="filter-container">
+            <button class="filter-btn active" data-filter="all">
+                <i class="fas fa-list"></i> 전체 보기
+            </button>
+            <button class="filter-btn" data-filter="reading">
+                <i class="fas fa-book-open"></i> 읽는 중
+            </button>
+            <button class="filter-btn" data-filter="completed">
+                <i class="fas fa-check-circle"></i> 완료된 책
+            </button>
+            <button class="filter-btn" data-filter="not-started">
+                <i class="fas fa-clock"></i> 시작 전
+            </button>
         </div>
 
         <!-- 검색 기능 -->
